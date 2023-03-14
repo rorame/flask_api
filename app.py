@@ -19,7 +19,7 @@ class Quotes(db.Model):
 
     def __init__(self, id, author, quote):
         self.id = id
-        self.author = author``
+        self.author = author
         self.quote = quote
 
     def __repr__(self):

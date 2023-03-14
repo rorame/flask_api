@@ -19,7 +19,7 @@ class Quotes(db.Model):
 
     def __init__(self, id, author, quote):
         self.id = id
-        self.author = author
+        self.author = author``
         self.quote = quote
 
     def __repr__(self):
@@ -67,4 +67,4 @@ class QuoteList(Resource):
 api.add_resource(QuoteList, '/api/', '/api/<int:id>')
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, host="0.0.0.0", port=5005)

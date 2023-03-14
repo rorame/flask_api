@@ -1,8 +1,8 @@
 version: '3'
 
 services:
-  db:
-    image: postgres
+  postgres:
+    image: postgres:15-alpine
     environment:
       - POSTGRES_PASSWORD=postgres
     ports:

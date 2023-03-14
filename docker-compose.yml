@@ -11,4 +11,4 @@ services:
     build: .
     command: python app.py
     ports:
-      - 5005:5000
+      - "5005:5005"

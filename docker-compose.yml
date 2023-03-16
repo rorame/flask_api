@@ -5,10 +5,17 @@ services:
     image: postgres:15-alpine
     environment:
       - POSTGRES_PASSWORD=postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
     ports:
       - "5432:5432"
   api:
     build: .
     command: python app.py
+    volumes:
+      - .:/usr/src/app/
     ports:
       - "5005:5005"
+
+volumes:
+  postgres_data:

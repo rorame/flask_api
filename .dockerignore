@@ -7,3 +7,7 @@ docker-compose.yml
 .gitignore
 .dockerignore
 .idea
+
+docker.txt
+
+migrations/

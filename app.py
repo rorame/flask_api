@@ -1,7 +1,8 @@
 from flask import Flask, request
-from flask_restful import Api, Resource
+from flask_restful import Api, Resource, abort
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
+from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = "postgresql://postgres:postgres@postgres:5432/postgres"
@@ -26,6 +27,44 @@ class Quotes(db.Model):
         return f"<Quote {self.id}>"
 
 
+class Users(db.Model):
+    __tablename__ = 'users'
+
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(50), nullable=False)
+    password = db.Column(db.String(500), nullable=False)
+
+    def __repr__(self):
+        return f"<Users {self.id}>"
+
+# Authorization
+@app.route("/api/register", methods=['POST'])
+def register():
+    if request.method == 'POST':
+        try:
+            data = request.get_json()
+            username = data['username']
+            password = data['password']
+            hash = generate_password_hash(password)
+
+            if username is None or hash is None:
+                abort(400) # missing argument
+            if Users.query.filter_by(username=username).first() is not None:
+                abort(400) # existing user
+
+            user = Users(username=username, password=hash)
+            db.session.add(user)
+            db.session.commit()
+        except:
+            db.session.rollback()
+            print('Error!')
+
+        return {"message": f"user {user.id} has been created successfully"}
+
+# TODO fix the error with UnboundLocalError: local variable 'user' referenced before assignment
+
+
+# CRUD operations
 class QuoteList(Resource):
     def get(self):
         quotes = Quotes.query.all()

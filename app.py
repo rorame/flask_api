@@ -3,13 +3,23 @@ from flask_restful import Api, Resource, abort
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from werkzeug.security import generate_password_hash, check_password_hash
+from flask_login import LoginManager, login_required, current_user
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = "postgresql://postgres:postgres@postgres:5432/postgres"
 
 api = Api(app)
+
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
+
+login_manger = LoginManager()
+login_manger.init_app(app)
+
+
+@login_manger.user_loader
+def load_user(user_id):
+    return Users.query.get_id(user_id)
 
 
 class Quotes(db.Model):
@@ -34,34 +44,67 @@ class Users(db.Model):
     username = db.Column(db.String(50), nullable=False)
     password = db.Column(db.String(500), nullable=False)
 
+    def is_authenticated(self):
+        return True
+
+    def is_active(self):
+        return True
+
+    def is_anonymouse(self):
+        return False
+
+    def get_id(self):
+        return self.username
+
     def __repr__(self):
         return f"<Users {self.id}>"
+
 
 # Authorization
 @app.route("/api/register", methods=['POST'])
 def register():
     if request.method == 'POST':
-        try:
-            data = request.get_json()
-            username = data['username']
-            password = data['password']
-            hash = generate_password_hash(password)
+        data = request.get_json()
+        username = data['username']
+        password = data['password']
+        hash = generate_password_hash(password)
 
-            if username is None or hash is None:
-                abort(400) # missing argument
-            if Users.query.filter_by(username=username).first() is not None:
-                abort(400) # existing user
+        if username is None or hash is None:
+            abort(400)  # missing argument
+        if Users.query.filter_by(username=username).first() is not None:
+            abort(400)  # existing user
 
-            user = Users(username=username, password=hash)
-            db.session.add(user)
-            db.session.commit()
-        except:
-            db.session.rollback()
-            print('Error!')
+        user = Users(username=username, password=hash)
+        db.session.add(user)
+        db.session.commit()
 
-        return {"message": f"user {user.id} has been created successfully"}
+        # TODO "You MUST validate the value of the next parameter. If you do not, your application will be vulnerable to open redirects"
+        load_user(user)
 
-# TODO fix the error with UnboundLocalError: local variable 'user' referenced before assignment
+    return {"message": f"user {user.id} has been created successfully"}
+
+
+@app.route('/api/login', methods=['GET', 'POST'])
+def login():
+    if request.method == ' POST':
+        username = request.json.get('username')
+        password = request.json.get('password')
+        user = Users.query.filter_by(username = username).first()
+
+        if user is not None and check_password_hash(user.password, password):
+            load_user(user)
+            return {"message": f"Hellow, {user.username}"}
+
+        return {"message": "invalid password or username"}
+
+
+# test login required
+@app.route('/api/test', methods='GET')
+@login_required
+def hellow_world():
+    return {'message': f"Hellow, {current_user.username}!"}
+
+
 
 
 # CRUD operations

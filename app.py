@@ -3,10 +3,12 @@ from flask_restful import Api, Resource, abort
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask_login import LoginManager, login_required, current_user
+from flask_login import LoginManager, login_required, current_user, login_user
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = "postgresql://postgres:postgres@postgres:5432/postgres"
+
+app.secret_key = 'super_secret_key'
 
 api = Api(app)
 
@@ -19,7 +21,7 @@ login_manger.init_app(app)
 
 @login_manger.user_loader
 def load_user(user_id):
-    return Users.query.get_id(user_id)
+    return Users.query.get(user_id)
 
 
 class Quotes(db.Model):
@@ -78,28 +80,25 @@ def register():
         db.session.add(user)
         db.session.commit()
 
-        # TODO "You MUST validate the value of the next parameter. If you do not, your application will be vulnerable to open redirects"
-        load_user(user)
-
     return {"message": f"user {user.id} has been created successfully"}
 
 
 @app.route('/api/login', methods=['GET', 'POST'])
 def login():
-    if request.method == ' POST':
+    if request.method == 'POST':
         username = request.json.get('username')
         password = request.json.get('password')
         user = Users.query.filter_by(username = username).first()
 
-        if user is not None and check_password_hash(user.password, password):
-            load_user(user)
+        if user and check_password_hash(user.password, password):
+            login_user(user)
             return {"message": f"Hellow, {user.username}"}
 
         return {"message": "invalid password or username"}
 
 
 # test login required
-@app.route('/api/test', methods='GET')
+@app.route('/api/test', methods=['GET'])
 @login_required
 def hellow_world():
     return {'message': f"Hellow, {current_user.username}!"}

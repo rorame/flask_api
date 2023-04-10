@@ -3,7 +3,7 @@ from flask_restful import Api, Resource, abort
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask_login import LoginManager, login_required, current_user, login_user
+from flask_login import LoginManager, login_required, current_user, login_user, logout_user
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = "postgresql://postgres:postgres@postgres:5432/postgres"
@@ -17,7 +17,6 @@ migrate = Migrate(app, db)
 
 login_manger = LoginManager()
 login_manger.init_app(app)
-
 
 @login_manger.user_loader
 def load_user(user_id):
@@ -39,6 +38,7 @@ class Quotes(db.Model):
         return f"<Quote {self.id}>"
 
 
+# TODO fix problem with primary key in Users table.
 class Users(db.Model):
     __tablename__ = 'users'
 
@@ -56,7 +56,7 @@ class Users(db.Model):
         return False
 
     def get_id(self):
-        return self.username
+        return self.id
 
     def __repr__(self):
         return f"<Users {self.id}>"
@@ -102,6 +102,13 @@ def login():
 @login_required
 def hellow_world():
     return {'message': f"Hellow, {current_user.username}!"}
+
+
+@app.route('/api/logout')
+@login_required
+def logout():
+    logout_user()
+    return {"message": "Bye!"}
 
 
 

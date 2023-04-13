@@ -1,4 +1,4 @@
-from flask import Flask, request
+from flask import Flask, request, redirect, url_for
 from flask_restful import Api, Resource, abort
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
@@ -38,7 +38,6 @@ class Quotes(db.Model):
         return f"<Quote {self.id}>"
 
 
-# TODO fix problem with primary key in Users table.
 class Users(db.Model):
     __tablename__ = 'users'
 
@@ -93,15 +92,9 @@ def login():
         if user and check_password_hash(user.password, password):
             login_user(user)
             return {"message": f"Hellow, {user.username}"}
+            # return redirect(url_for(profile))
 
         return {"message": "invalid password or username"}
-
-
-# test login required
-@app.route('/api/test', methods=['GET'])
-@login_required
-def hellow_world():
-    return {'message': f"Hellow, {current_user.username}!"}
 
 
 @app.route('/api/logout')
@@ -111,6 +104,10 @@ def logout():
     return {"message": "Bye!"}
 
 
+@app.route('/api/profile', methods=['GET'])
+@login_required
+def profile():
+    return {'message': f"Hellow, {current_user.username}!"}
 
 
 # CRUD operations
@@ -153,6 +150,7 @@ class QuoteList(Resource):
 
 
 api.add_resource(QuoteList, '/api/', '/api/<int:id>')
+
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=5005)
